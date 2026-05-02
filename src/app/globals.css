@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Shippori+Mincho:wght@400;500;700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Noto Sans JP', sans-serif;
+  --font-display: 'Shippori Mincho', serif;
+  --font-mono: 'DM Mono', monospace;
+
+  --ink: #1a1a2e;
+  --ink-soft: #3d3d5c;
+  --ink-muted: #7070a0;
+  --paper: #f8f7f4;
+  --paper-warm: #f0ede6;
+  --accent: #1a56db;
+  --accent-light: #e8f0fe;
+  --accent-mid: #4479e8;
+  --ok: #059669;
+  --ok-bg: #ecfdf5;
+  --warn: #d97706;
+  --warn-bg: #fffbeb;
+  --error: #dc2626;
+  --error-bg: #fef2f2;
+  --border: #e2dfd8;
+  --shadow: rgba(26, 26, 46, 0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display { font-family: var(--font-display); }
+.font-mono { font-family: var(--font-mono); }
+
+/* Score ring animation */
+@keyframes scoreReveal {
+  from { stroke-dashoffset: 314; }
+  to { stroke-dashoffset: var(--target-offset); }
+}
+
+.score-ring {
+  animation: scoreReveal 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Card entrance */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card-animate {
+  animation: cardIn 0.5s ease forwards;
+}
+
+/* Pulse for loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--paper-warm) 25%, #e8e4da 50%, var(--paper-warm) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Ink dot decoration */
+.ink-dot::before {
+  content: '●';
+  font-size: 0.4em;
+  vertical-align: middle;
+  margin-right: 0.5em;
+  opacity: 0.4;
+}
+
+/* Custom scrollbar */
+textarea::-webkit-scrollbar { width: 6px; }
+textarea::-webkit-scrollbar-track { background: var(--paper-warm); }
+textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
