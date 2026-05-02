@@ -155,10 +155,10 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
                 </p>
                 <ul style={{ fontSize: "0.82rem", color: "var(--ink-soft)", lineHeight: 1.9 }} className="space-y-2">
                   {[
-                    "個人情報・機密情報を含む文章は入力しないでください",
-                    "入力文章はサービス改善のため最大90日間保存されます",
-                    "診断結果はAIによるものであり、参考情報としてご活用ください",
-                    "商業目的での無断転用はご遠慮ください",
+                    "個人情報・機密情報を含む文章は入力しないでください。",
+                    "入力文章はサービス改善のため最大90日間保存されます。",
+                    "診断結果はAIによるものであり、参考情報としてご活用ください。",
+                    "商業目的での無断転用はご遠慮ください。",
                   ].map((item, i) => (
                     <li key={i} style={{ display: "flex", gap: "0.5rem" }}>
                       <span style={{ color: "var(--accent)", flexShrink: 0 }}>✓</span>
@@ -244,18 +244,18 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
           </div>
 
           {/* Content */}
-          <div style={{ padding: "1.5rem", textAlign: "center" }}>
+          <div style={{ padding: "1.5rem", textAlign: "left" }}>
             <div style={{ fontSize: "3rem", marginBottom: "1rem", lineHeight: 1 }}>{current.icon}</div>
             <div style={{ fontSize: "0.75rem", color: "var(--accent)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
               STEP {step + 1} / {TUTORIAL_STEPS.length}
             </div>
-            <h3 className="font-display font-bold" style={{ fontSize: "1.3rem", color: "var(--ink)", marginBottom: "0.75rem" }}>
+            <h3 className="font-display font-bold" style={{ fontSize: "1.3rem", color: "var(--ink)", marginBottom: "0.75rem", textAlign: "left" }}>
               {current.title}
             </h3>
-            <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.8, marginBottom: "1rem" }}>
+            <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.8, marginBottom: "1rem", textAlign: "left" }}>
               {current.desc}
             </p>
-            <div style={{ background: "var(--accent-light)", borderRadius: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--accent)", lineHeight: 1.7 }}>
+            <div style={{ background: "var(--accent-light)", borderRadius: "0.75rem", padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--accent)", lineHeight: 1.7, textAlign: "left" }}>
               💡 {current.hint}
             </div>
           </div>

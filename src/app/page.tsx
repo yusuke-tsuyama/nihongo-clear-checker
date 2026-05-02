@@ -189,7 +189,7 @@ export default function HomePage() {
           <div className="p-4 sm:p-6 space-y-4">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium" style={{ color: "var(--ink)" }}>
-                診断したい文章を貼り付けてください
+                診断したい文章を貼り付けてください。
               </label>
               <button onClick={() => setText(SAMPLE_TEXT)} className="text-xs px-3 py-1 rounded-full" style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid #c7d9fb" }}>
                 サンプルを使う
@@ -198,7 +198,7 @@ export default function HomePage() {
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="ここに文章を入力してください..."
+              placeholder="ここに文章を入力してください。"
               className="w-full rounded-xl resize-none text-sm leading-relaxed p-4 outline-none"
               style={{ minHeight: 200, background: "var(--paper)", border: `1.5px solid ${overLimit ? "var(--error)" : "var(--border)"}`, color: "var(--ink)", fontFamily: "var(--font-sans)" }}
               rows={10}
