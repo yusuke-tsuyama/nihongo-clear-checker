@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { getSessionId } from "./session";
 
 let _client: SupabaseClient | null = null;
 
@@ -11,10 +12,28 @@ export function getSupabase(): SupabaseClient | null {
   return _client;
 }
 
-export function getSupabaseTable(table: string) {
+export async function saveDiagnosis(data: {
+  input_text: string;
+  score: number;
+  summary: string;
+  result_json: string;
+}) {
   const client = getSupabase();
-  if (!client) return null;
-  return client.from(table);
+  if (!client) return;
+  const sessionId = getSessionId();
+  return client.from("diagnoses").insert({ ...data, session_id: sessionId });
+}
+
+export async function fetchDiagnoses() {
+  const client = getSupabase();
+  if (!client) return { data: [], error: null };
+  const sessionId = getSessionId();
+  return client
+    .from("diagnoses")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: false })
+    .limit(20);
 }
 
 export interface DiagnosisRecord {
@@ -24,4 +43,5 @@ export interface DiagnosisRecord {
   score: number;
   summary: string;
   result_json: string;
+  session_id?: string;
 }
