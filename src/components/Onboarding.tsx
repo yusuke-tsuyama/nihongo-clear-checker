@@ -149,7 +149,10 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
                 </section>
                 <section>
                   <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第2条（利用条件）</strong>
-                  個人情報・機密情報を含む文章の入力はご遠慮ください。第三者の著作権を侵害するコンテンツ、違法・有害なコンテンツの入力を禁止します。
+                  以下のコンテンツの入力を禁止します。<br />
+                  ・個人情報・機密情報・社内文書など、外部に送信することが不適切な情報<br />
+                  ・第三者の著作権を侵害するコンテンツ<br />
+                  ・違法または有害なコンテンツ
                 </section>
                 <section>
                   <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第3条（データの取り扱い）</strong>
@@ -157,11 +160,15 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
                 </section>
                 <section>
                   <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第4条（AIの性質）</strong>
-                  診断はAI（Claude）によって行われます。結果は参考情報であり、正確性・完全性を保証するものではありません。
+                  診断はAI（Claude）によって行われます。結果は参考情報であり、正確性・完全性を保証するものではありません。医療・法律・金融などの専門的判断には使用しないでください。
                 </section>
                 <section>
                   <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第5条（免責事項）</strong>
                   本サービスの利用によって生じた損害について、当社は責任を負いかねます。必要に応じて専門家にご相談ください。
+                </section>
+                <section>
+                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第6条（お問い合わせ）</strong>
+                  合同会社リベルダード　メール：info@liberdade.sakura.ne.jp
                 </section>
                 <button onClick={() => setShowTermsFull(false)} style={{ color: "var(--accent)", fontSize: "0.8rem", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }}>
                   ▲ 閉じる
