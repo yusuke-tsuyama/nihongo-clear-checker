@@ -142,7 +142,7 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
           <div style={{ padding: "1.5rem", maxHeight: "55vh", overflowY: "auto" }}>
             {showTermsFull ? (
               <div style={{ fontSize: "0.8rem", color: "var(--ink-soft)", lineHeight: 1.9 }} className="space-y-4">
-                <p style={{ color: "var(--ink-muted)", fontSize: "0.72rem" }}>最終更新日：2025年1月1日</p>
+                <p style={{ color: "var(--ink-muted)", fontSize: "0.72rem" }}>最終更新日：2026年6月17日</p>
                 <section>
                   <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第1条（目的）</strong>
                   本サービス「日本語クリアチェッカー」は、合同会社リベルダードが提供する日本語文章の診断・改善支援ツールです。
@@ -153,7 +153,7 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
                 </section>
                 <section>
                   <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第3条（データの取り扱い）</strong>
-                  入力された文章および診断結果は、サービス改善を目的として最大90日間保存される場合があります。個人を特定できる形での第三者への提供は行いません。
+                  入力文章はAI診断のためClaude APIへ送信されます。「保存」ボタンを押した場合のみデータが保存されます。診断のみの場合は保存されません。
                 </section>
                 <section>
                   <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第4条（AIの性質）</strong>
@@ -161,7 +161,7 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
                 </section>
                 <section>
                   <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第5条（免責事項）</strong>
-                  当社は、本サービスの利用によって生じた損害について、一切の責任を負いません。
+                  本サービスの利用によって生じた損害について、当社は責任を負いかねます。必要に応じて専門家にご相談ください。
                 </section>
                 <button onClick={() => setShowTermsFull(false)} style={{ color: "var(--accent)", fontSize: "0.8rem", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }}>
                   ▲ 閉じる
@@ -175,9 +175,10 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
                 <ul style={{ fontSize: "0.82rem", color: "var(--ink-soft)", lineHeight: 1.9 }} className="space-y-2">
                   {[
                     "個人情報・機密情報を含む文章は入力しないでください。",
-                    "入力文章はサービス改善のため最大90日間保存されます。",
+                    "入力文章はAI診断のためClaude APIへ送信されます。",
+                    "「保存」ボタンを押した場合のみデータが保存されます。",
                     "診断結果はAIによるものであり、参考情報としてご活用ください。",
-                    "商業目的での無断転用はご遠慮ください。",
+                    "医療・法律・金融などの専門的判断には使用しないでください。",
                   ].map((item, i) => (
                     <li key={i} style={{ display: "flex", gap: "0.5rem" }}>
                       <span style={{ color: "var(--accent)", flexShrink: 0 }}>✓</span>

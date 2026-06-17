@@ -120,7 +120,7 @@ export default function TermsModal({ onClose, initialTab = "terms" }: Props) {
 
             <section>
               <h3 className="font-semibold mb-1" style={{ color: "var(--ink)" }}>第6条（お問い合わせ）</h3>
-              <p>本規約に関するお問い合わせは、合同会社リベルダードまでご連絡ください。</p>
+              <p>本規約に関するお問い合わせは、合同会社リベルダードまでご連絡ください。<br />メール：info@liberdade.sakura.ne.jp</p>
             </section>
           </div>
         ) : (
@@ -173,7 +173,7 @@ export default function TermsModal({ onClose, initialTab = "terms" }: Props) {
 
             <section>
               <h3 className="font-semibold mb-1" style={{ color: "var(--ink)" }}>第7条（お問い合わせ）</h3>
-              <p>プライバシーポリシーに関するお問い合わせは、合同会社リベルダードまでご連絡ください。</p>
+              <p>プライバシーポリシーに関するお問い合わせは、合同会社リベルダードまでご連絡ください。<br />メール：info@liberdade.sakura.ne.jp</p>
             </section>
           </div>
         )}
