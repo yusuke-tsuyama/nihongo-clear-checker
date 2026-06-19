@@ -433,10 +433,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "リライト結果の解析に失敗しました" }, { status: 500 });
     }
 
+    const VALID_IDS = ["kakari", "ten", "no", "ukemi", "taigen"];
+    const filteredCriteria = VALID_IDS.map((id) => {
+      const found = diagnosisResult.criteria.find((c: { id: string }) => c.id === id);
+      return found ?? { id, name: id, status: "OK", comment: "診断データなし" };
+    });
+    const calcScore = (criteria: Array<{ status: string }>) =>
+      criteria.reduce((sum, c) => sum + (c.status === "OK" ? 20 : c.status === "注意" ? 10 : 0), 0);
+
     const result = {
-      score: diagnosisResult.score,
+      score: calcScore(filteredCriteria),
       overall: diagnosisResult.overall,
-      criteria: diagnosisResult.criteria,
+      criteria: filteredCriteria,
       rewrites: rewriteResult,
     };
 
