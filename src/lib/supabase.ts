@@ -24,16 +24,20 @@ export async function saveDiagnosis(data: {
   return client.from("diagnoses").insert({ ...data, session_id: sessionId });
 }
 
-export async function fetchDiagnoses() {
-  const client = getSupabase();
-  if (!client) return { data: [], error: null };
+export async function fetchDiagnoses(): Promise<{ data: DiagnosisRecord[] | null; error: Error | null }> {
   const sessionId = getSessionId();
-  return client
-    .from("diagnoses")
-    .select("*")
-    .eq("session_id", sessionId)
-    .order("created_at", { ascending: false })
-    .limit(20);
+  try {
+    const res = await fetch("/api/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    });
+    if (!res.ok) return { data: null, error: new Error("Failed to fetch history") };
+    const json = await res.json();
+    return { data: json.data, error: null };
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+  }
 }
 
 export interface DiagnosisRecord {
