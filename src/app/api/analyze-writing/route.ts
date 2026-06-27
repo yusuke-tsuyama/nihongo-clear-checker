@@ -402,6 +402,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "テキストが必要です" }, { status: 400 });
     }
 
+    try {
+      const ip = (req.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim();
+      const today = new Date().toISOString().slice(0, 10);
+
+      const { data: rateRecord } = await supabase
+        .from("rate_limits")
+        .select("id, count")
+        .eq("ip_address", ip)
+        .eq("date", today)
+        .maybeSingle();
+
+      if (rateRecord) {
+        if (rateRecord.count >= 30) {
+          return NextResponse.json(
+            { error: "本日の利用上限に達しました。明日また試してください。" },
+            { status: 429 }
+          );
+        }
+        await supabase
+          .from("rate_limits")
+          .update({ count: rateRecord.count + 1 })
+          .eq("id", rateRecord.id);
+      } else {
+        await supabase
+          .from("rate_limits")
+          .insert({ ip_address: ip, date: today, count: 1 });
+      }
+    } catch {
+      // レート制限チェック失敗時は可用性を優先して診断を続行
+    }
+
     const diagnosisResponse = await client.messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 8000,
