@@ -5,6 +5,9 @@ import { CLAUDE_MODEL } from "@/lib/constants";
 
 const client = new Anthropic();
 
+// haiku検証などでリライト用モデルだけ差し替えたい場合はここを変更する
+const REWRITE_MODEL = CLAUDE_MODEL;
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -255,7 +258,7 @@ score = (OKの数×20) + (注意の数×10) + (要修正の数×0)
 重要：paragraphは一つの段落に複数の主題が混在している場合のみcriteria配列に含めること。問題なければparagraphをcriteria配列から完全に省略すること。
 `;
 
-const SYSTEM_PROMPT_REWRITE = `
+const REWRITE_COMMON = `
 あなたは日本語の文章をリライトするアシスタントです。
 日本語を明晰にするための原則に基づき、指定されたパターンでリライトしてください。
 
@@ -299,11 +302,12 @@ const SYSTEM_PROMPT_REWRITE = `
 - 口語体・方言・キャラクターの語り口は原則として保持する
 - リズム・語気を損なわない範囲で修正する
 - 保護すべき文体がある場合は最小限の介入にとどめる
+`;
 
----
+type RewritePattern = "simple" | "web" | "business";
 
-## パターン別ルール
-
+const REWRITE_PATTERN: Record<RewritePattern, string> = {
+  simple: `
 ### ■ simple（シンプル版）
 目的：原文の語気・リズム・人称を維持しながら、構造上の問題だけを修正する。
 
@@ -329,9 +333,8 @@ const SYSTEM_PROMPT_REWRITE = `
 入力：「はっきり言うぜ。俺はなぁ、他人の、言うことの、信用性の、大事さのことなんざ、信じちゃいねぇんだよぉ。」
 出力：「はっきり言うぜ。俺はなぁ、他人が言うことなんざ、信じちゃいねぇんだよぉ。」
 （「の」連打を「が」格化して解消。語気・リズムはそのまま維持。「これっぽっちも」等の付加は不要）
-
----
-
+`,
+  web: `
 ### ■ web（Web記事版）
 目的：読者がスキャンして読む前提で、視覚的に整理し、結論を先出しにする。
 
@@ -360,9 +363,8 @@ const SYSTEM_PROMPT_REWRITE = `
 入力：「はっきり言うぜ。俺はなぁ、他人の、言うことの、信用性の、大事さのことなんざ、信じちゃいねぇんだよぉ。」
 出力：「【はっきり言うぜ】／俺はなぁ、他人の言うことなんざ、信じちゃいねぇんだよぉ。」
 （冒頭の宣言のみ【】で強調。二つ目の【】はくどいので不要）
-
----
-
+`,
+  business: `
 ### ■ business（ビジネス文書版）
 目的：丁寧体・簡潔・動詞で言い切る形式を基本としつつ、体言止めを適度に活用してリズムをつける。
 
@@ -383,26 +385,86 @@ const SYSTEM_PROMPT_REWRITE = `
 入力：「はっきり言うぜ。俺はなぁ、他人の、言うことの、信用性の、大事さのことなんざ、信じちゃいねぇんだよぉ。」
 出力：「はっきり申し上げます。私は、他人の発言を信用しません。」
 （名詞化ゼロ・丁寧体・短文。口語を丁寧体に昇格させる）
+`,
+};
+
+function buildRewritePrompt(pattern: RewritePattern): string {
+  return `${REWRITE_COMMON}
+
+---
+
+## パターン別ルール
+
+${REWRITE_PATTERN[pattern]}
 
 ---
 
 ## 出力形式
 
-出力に関する禁止事項：score・criteria・comment・overall を含むすべての出力で、特定の著者名・書籍名、および「第一原則」「第二原則」「二大原則」「テン」「マル」等の独自用語を使用しないこと。読点・句点・修飾・係り受け・受動態などの一般的な日本語の用語で説明すること。
+出力に関する禁止事項：特定の著者名・書籍名、および「第一原則」「第二原則」「二大原則」「テン」「マル」等の独自用語を使用しないこと。読点・句点・修飾・係り受け・受動態などの一般的な日本語の用語で説明すること。
 
-以下のJSON形式で出力すること。他のテキストは一切出力しない。
-simple・web・business の3つのパターンを必ずすべて出力すること。どれか一つでも省略してはならない。原文がどんな種類（職務経歴書・記事・口語など）であっても、必ず3パターンすべてを生成する。
-
-{
-  "simple": "<simpleリライト結果>",
-  "web": "<webリライト結果>",
-  "business": "<businessリライト結果>"
+出力はリライトした本文のみとする。JSON形式・コードフェンス（\`\`\`）・前置き（「はい、リライトします」等の挨拶や説明）・見出しは一切含めないこと。本文の前後に余計なテキストを付け加えないこと。
+`;
 }
 
-※ 3つのキー（simple・web・business）はすべて必須であり、いかなる場合も省略してはならない。
-※ 原文が短い場合でも、各パターンの差別化を必ず維持すること。
-※ 原文の改行・段落構造は各パターンの目的に合わせて再構成してよい。
-`;
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const current = nextIndex++;
+      results[current] = await fn(items[current], current);
+    }
+  }
+
+  const workerCount = Math.min(concurrency, items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+  return results;
+}
+
+async function rewriteOne(
+  pattern: RewritePattern,
+  text: string,
+  diagnosis: unknown
+): Promise<string> {
+  const response = await client.messages.create(
+    {
+      model: REWRITE_MODEL,
+      max_tokens: 5000,
+      system: buildRewritePrompt(pattern),
+      messages: [
+        {
+          role: "user",
+          content: `元の文章：\n${text}\n\n診断結果：\n${JSON.stringify(diagnosis)}`,
+        },
+      ],
+    },
+    { maxRetries: 4 }
+  );
+
+  return response.content
+    .filter((block): block is Anthropic.TextBlock => block.type === "text")
+    .map((block) => block.text)
+    .join("")
+    .trim();
+}
+
+async function generateRewrites(
+  text: string,
+  diagnosis: unknown
+): Promise<{ simple: string; web: string; business: string }> {
+  const patterns: RewritePattern[] = ["simple", "web", "business"];
+  const [simple, web, business] = await mapWithConcurrency(patterns, 3, (pattern) =>
+    rewriteOne(pattern, text, diagnosis)
+  );
+  return { simple, web, business };
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -417,25 +479,11 @@ export async function POST(req: NextRequest) {
       if (!clientDiagnosis) {
         return NextResponse.json({ error: "リライトには診断結果が必要です" }, { status: 400 });
       }
-      const rewriteResponse = await client.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 8000,
-        system: SYSTEM_PROMPT_REWRITE,
-        messages: [{
-          role: "user",
-          content: `元の文章：\n${text}\n\n診断結果：\n${JSON.stringify(clientDiagnosis)}`,
-        }],
-      });
-      const rewriteText = rewriteResponse.content
-        .filter((block): block is Anthropic.TextBlock => block.type === "text")
-        .map((block) => block.text)
-        .join("");
       try {
-        const cleanRewrite = rewriteText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const rewriteResult = JSON.parse(cleanRewrite);
+        const rewriteResult = await generateRewrites(text, clientDiagnosis);
         return NextResponse.json({ rewrites: rewriteResult });
-      } catch {
-        console.error("リライトJSON parse失敗:", rewriteText);
+      } catch (rewriteError) {
+        console.error("リライト失敗:", rewriteError);
         return NextResponse.json({ error: "リライト結果の解析に失敗しました" }, { status: 500 });
       }
     }
@@ -535,28 +583,12 @@ export async function POST(req: NextRequest) {
     }
 
     // ===== 後方互換（mode 無し）: リライトまで実行して全部返す =====
-    const rewriteResponse = await client.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 8000,
-      system: SYSTEM_PROMPT_REWRITE,
-      messages: [{
-        role: "user",
-        content: `元の文章：\n${text}\n\n診断結果：\n${JSON.stringify(diagnosisResult)}`,
-      }],
-    });
-
-    const rewriteText = rewriteResponse.content
-      .filter((block): block is Anthropic.TextBlock => block.type === "text")
-      .map((block) => block.text)
-      .join("");
-
     let rewriteResult: { simple: string; web: string; business: string };
 
     try {
-      const cleanRewrite = rewriteText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      rewriteResult = JSON.parse(cleanRewrite);
-    } catch {
-      console.error("リライトJSON parse失敗:", rewriteText);
+      rewriteResult = await generateRewrites(text, diagnosisResult);
+    } catch (rewriteError) {
+      console.error("リライト失敗:", rewriteError);
       return NextResponse.json({ error: "リライト結果の解析に失敗しました" }, { status: 500 });
     }
 
