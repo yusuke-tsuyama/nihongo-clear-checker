@@ -1,20 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
-import { CLAUDE_MODEL } from "@/lib/constants";
+====================================================================
+このファイルは src/app/api/analyze-writing/route.ts から
+プロンプト関連の定数の中身（テンプレートリテラル内）のみを抽出したものです。
+ChatGPTへの共有用。route.ts 自体は変更していません（読み取り専用抽出）。
+====================================================================
 
-const client = new Anthropic();
 
-// haiku検証などでリライト用モデルだけ差し替えたい場合はここを変更する
-const REWRITE_MODEL = CLAUDE_MODEL;
+====================================================================
+[1] SYSTEM_PROMPT_DIAGNOSIS（診断プロンプト）
+====================================================================
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-const SYSTEM_PROMPT_DIAGNOSIS = `
 あなたは日本語の文章を診断するアシスタントです。
 日本語を明晰にするための原則に基づき、以下の6つの診断基準で文章を評価してください。
 
@@ -257,9 +251,12 @@ score = (OKの数×20) + (注意の数×10) + (要修正の数×0)
 
 重要：taigenは本文文末（箇条書き・項目見出しを除く）の25%超または5文連続以上の場合のみcriteria配列に含めること。問題なければtaigenをcriteria配列から完全に省略すること。
 重要：paragraphは一つの段落に複数の主題が混在している場合のみcriteria配列に含めること。問題なければparagraphをcriteria配列から完全に省略すること。
-`;
 
-const REWRITE_COMMON = `
+
+====================================================================
+[2] REWRITE_COMMON（リライト共通部）
+====================================================================
+
 あなたは日本語の文章をリライトするアシスタントです。
 日本語を明晰にするための原則に基づき、指定されたパターンでリライトしてください。
 
@@ -303,12 +300,12 @@ const REWRITE_COMMON = `
 - 口語体・方言・キャラクターの語り口は原則として保持する
 - リズム・語気を損なわない範囲で修正する
 - 保護すべき文体がある場合は最小限の介入にとどめる
-`;
 
-type RewritePattern = "simple" | "web" | "business";
 
-const REWRITE_PATTERN: Record<RewritePattern, string> = {
-  simple: `
+====================================================================
+[3] REWRITE_PATTERN.simple（simple / シンプル版）
+====================================================================
+
 ### ■ simple（シンプル版）
 目的：原文の語気・リズム・人称を維持しながら、構造上の問題だけを修正する。
 
@@ -334,8 +331,12 @@ const REWRITE_PATTERN: Record<RewritePattern, string> = {
 入力：「はっきり言うぜ。俺はなぁ、他人の、言うことの、信用性の、大事さのことなんざ、信じちゃいねぇんだよぉ。」
 出力：「はっきり言うぜ。俺はなぁ、他人が言うことなんざ、信じちゃいねぇんだよぉ。」
 （「の」連打を「が」格化して解消。語気・リズムはそのまま維持。「これっぽっちも」等の付加は不要）
-`,
-  web: `
+
+
+====================================================================
+[4] REWRITE_PATTERN.web（web / Web記事版）
+====================================================================
+
 ### ■ web（Web記事版）
 目的：読者がスキャンして読む前提で、視覚的に整理し、結論を先出しにする。
 
@@ -364,8 +365,12 @@ const REWRITE_PATTERN: Record<RewritePattern, string> = {
 入力：「はっきり言うぜ。俺はなぁ、他人の、言うことの、信用性の、大事さのことなんざ、信じちゃいねぇんだよぉ。」
 出力：「【はっきり言うぜ】／俺はなぁ、他人の言うことなんざ、信じちゃいねぇんだよぉ。」
 （冒頭の宣言のみ【】で強調。二つ目の【】はくどいので不要）
-`,
-  business: `
+
+
+====================================================================
+[5] REWRITE_PATTERN.business（business / ビジネス文書版）
+====================================================================
+
 ### ■ business（ビジネス文書版）
 目的：丁寧体・簡潔・動詞で言い切る形式を基本としつつ、体言止めを適度に活用してリズムをつける。
 
@@ -386,242 +391,44 @@ const REWRITE_PATTERN: Record<RewritePattern, string> = {
 入力：「はっきり言うぜ。俺はなぁ、他人の、言うことの、信用性の、大事さのことなんざ、信じちゃいねぇんだよぉ。」
 出力：「はっきり申し上げます。私は、他人の発言を信用しません。」
 （名詞化ゼロ・丁寧体・短文。口語を丁寧体に昇格させる）
-`,
-};
 
-function buildRewritePrompt(pattern: RewritePattern): string {
-  return `${REWRITE_COMMON}
 
----
+====================================================================
+[6] REWRITE_OUTPUT_INSTRUCTION（リライト出力指示）
+====================================================================
 
-## パターン別ルール
-
-${REWRITE_PATTERN[pattern]}
-
----
+※注：route.ts には REWRITE_OUTPUT_INSTRUCTION という独立した定数は存在しません。
+以下の内容は buildRewritePrompt() 関数内に「## 出力形式」セクションとして
+テンプレートリテラルに直接ハードコードされています（[7]の連結順を参照）。
 
 ## 出力形式
 
 出力に関する禁止事項：特定の著者名・書籍名、および「第一原則」「第二原則」「二大原則」「テン」「マル」等の独自用語を使用しないこと。読点・句点・修飾・係り受け・受動態などの一般的な日本語の用語で説明すること。
 
-出力はリライトした本文のみとする。JSON形式・コードフェンス（\`\`\`）・前置き（「はい、リライトします」等の挨拶や説明）・見出しは一切含めないこと。本文の前後に余計なテキストを付け加えないこと。
-`;
-}
+出力はリライトした本文のみとする。JSON形式・コードフェンス（```）・前置き（「はい、リライトします」等の挨拶や説明）・見出しは一切含めないこと。本文の前後に余計なテキストを付け加えないこと。
 
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  concurrency: number,
-  fn: (item: T, index: number) => Promise<R>
-): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let nextIndex = 0;
 
-  async function worker() {
-    while (nextIndex < items.length) {
-      const current = nextIndex++;
-      results[current] = await fn(items[current], current);
-    }
-  }
+====================================================================
+[7] buildRewritePrompt() の組み立て順（末尾注記）
+====================================================================
 
-  const workerCount = Math.min(concurrency, items.length);
-  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+関数 buildRewritePrompt(pattern: "simple" | "web" | "business") は、
+以下の順序で文字列を連結して最終的な system プロンプトを生成しています
+（route.ts 391〜408行目）。
 
-  return results;
-}
+  1. REWRITE_COMMON（リライト共通原則。[2]の内容）
+  2. 区切り線 "---" ＋ 見出し "## パターン別ルール"
+  3. REWRITE_PATTERN[pattern]（simple / web / business のいずれか1つ。[3][4][5]のいずれか）
+  4. 区切り線 "---" ＋ 見出し "## 出力形式"
+  5. 出力形式の指示（[6]の内容。独立定数ではなくインライン記述）
 
-async function rewriteOne(
-  pattern: RewritePattern,
-  text: string,
-  diagnosis: unknown
-): Promise<string> {
-  const response = await client.messages.create(
-    {
-      model: REWRITE_MODEL,
-      max_tokens: 5000,
-      system: buildRewritePrompt(pattern),
-      messages: [
-        {
-          role: "user",
-          content: `元の文章：\n${text}\n\n診断結果：\n${JSON.stringify(diagnosis)}`,
-        },
-      ],
-    },
-    { maxRetries: 4 }
-  );
+つまり最終プロンプト = REWRITE_COMMON + "\n\n---\n\n## パターン別ルール\n\n"
+                     + REWRITE_PATTERN[pattern] + "\n\n---\n\n## 出力形式\n\n"
+                     + （出力形式の指示文）
 
-  return response.content
-    .filter((block): block is Anthropic.TextBlock => block.type === "text")
-    .map((block) => block.text)
-    .join("")
-    .trim();
-}
-
-async function generateRewrites(
-  text: string,
-  diagnosis: unknown
-): Promise<{ simple: string; web: string; business: string }> {
-  const patterns: RewritePattern[] = ["simple", "web", "business"];
-  const [simple, web, business] = await mapWithConcurrency(patterns, 3, (pattern) =>
-    rewriteOne(pattern, text, diagnosis)
-  );
-  return { simple, web, business };
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    // ログイン中ユーザーの取得（現時点では利用制限等には使わず、未ログインでも従来通り動作する）
-    const serverSupabase = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await serverSupabase.auth.getUser();
-    void user;
-
-    const { text, sessionId, mode, diagnosisResult: clientDiagnosis } = await req.json();
-
-    if (!text || typeof text !== "string") {
-      return NextResponse.json({ error: "テキストが必要です" }, { status: 400 });
-    }
-
-    // ===== mode === "rewrite": 診断をスキップし、受け取った診断結果でリライトのみ実行 =====
-    if (mode === "rewrite") {
-      if (!clientDiagnosis) {
-        return NextResponse.json({ error: "リライトには診断結果が必要です" }, { status: 400 });
-      }
-      try {
-        const rewriteResult = await generateRewrites(text, clientDiagnosis);
-        return NextResponse.json({ rewrites: rewriteResult });
-      } catch (rewriteError) {
-        console.error("リライト失敗:", rewriteError);
-        return NextResponse.json({ error: "リライト結果の解析に失敗しました" }, { status: 500 });
-      }
-    }
-
-    // ===== レート制限チェック（診断系のリクエストのみ） =====
-    try {
-      const ip = (req.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim();
-      const today = new Date().toISOString().slice(0, 10);
-
-      const { data: rateRecord } = await supabase
-        .from("rate_limits")
-        .select("id, count")
-        .eq("ip_address", ip)
-        .eq("date", today)
-        .maybeSingle();
-
-      if (rateRecord) {
-        if (rateRecord.count >= 30) {
-          return NextResponse.json(
-            { error: "本日の利用上限に達しました。明日また試してください。" },
-            { status: 429 }
-          );
-        }
-        await supabase
-          .from("rate_limits")
-          .update({ count: rateRecord.count + 1 })
-          .eq("id", rateRecord.id);
-      } else {
-        await supabase
-          .from("rate_limits")
-          .insert({ ip_address: ip, date: today, count: 1 });
-      }
-    } catch {
-      // レート制限チェック失敗時は可用性を優先して診断を続行
-    }
-
-    // ===== 診断 =====
-    const diagnosisResponse = await client.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 8000,
-      system: SYSTEM_PROMPT_DIAGNOSIS,
-      messages: [{ role: "user", content: text }],
-    });
-
-    const diagnosisText = diagnosisResponse.content
-      .filter((block): block is Anthropic.TextBlock => block.type === "text")
-      .map((block) => block.text)
-      .join("");
-
-    let diagnosisResult: {
-      score: number;
-      criteria: Array<{ id: string; name: string; status: string; comment: string }>;
-      overall: string;
-    };
-
-    try {
-      const cleanDiagnosis = diagnosisText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      diagnosisResult = JSON.parse(cleanDiagnosis);
-    } catch {
-      console.error("診断JSON parse失敗:", diagnosisText);
-      return NextResponse.json({ error: "診断結果の解析に失敗しました" }, { status: 500 });
-    }
-
-    // ===== スコア計算（リライトより前に実施） =====
-    const VALID_IDS = ["kakari", "ten", "no", "ukemi", "taigen", "paragraph"];
-    const CONDITIONAL_IDS = new Set(["taigen", "paragraph"]);
-    const FIXED_COUNT = 4;
-    const CONDITIONAL_COUNT = 2;
-
-    const filteredCriteria = VALID_IDS.reduce<Array<{ id: string; name: string; status: string; comment: string }>>((acc, id) => {
-      const found = diagnosisResult.criteria.find((c: { id: string }) => c.id === id);
-      if (found) {
-        acc.push(found);
-      } else if (!CONDITIONAL_IDS.has(id)) {
-        acc.push({ id, name: id, status: "OK", comment: "問題ありません" });
-      }
-      return acc;
-    }, []);
-
-    const pointOf = (status: string) => (status === "OK" ? 20 : status === "注意" ? 10 : 0);
-    const earnedFromShown = filteredCriteria.reduce((sum, c) => sum + pointOf(c.status), 0);
-    const shownConditional = filteredCriteria.filter((c) => CONDITIONAL_IDS.has(c.id)).length;
-    const omittedConditional = CONDITIONAL_COUNT - shownConditional;
-    const earned = earnedFromShown + omittedConditional * 20;
-    const denominator = (FIXED_COUNT + CONDITIONAL_COUNT) * 20;
-    const score = Math.round((earned / denominator) * 100);
-
-    const diagnosisOnly = {
-      score,
-      overall: diagnosisResult.overall,
-      criteria: filteredCriteria,
-    };
-
-    // ===== mode === "diagnosis": リライトせず診断結果のみ返す =====
-    if (mode === "diagnosis") {
-      return NextResponse.json(diagnosisOnly);
-    }
-
-    // ===== 後方互換（mode 無し）: リライトまで実行して全部返す =====
-    let rewriteResult: { simple: string; web: string; business: string };
-
-    try {
-      rewriteResult = await generateRewrites(text, diagnosisResult);
-    } catch (rewriteError) {
-      console.error("リライト失敗:", rewriteError);
-      return NextResponse.json({ error: "リライト結果の解析に失敗しました" }, { status: 500 });
-    }
-
-    const result = {
-      ...diagnosisOnly,
-      rewrites: rewriteResult,
-    };
-
-    if (sessionId) {
-      const { error: dbError } = await supabase.from("diagnoses").insert({
-        session_id: sessionId,
-        original_text: text,
-        score: result.score,
-        checks: result.criteria,
-        rewrites: result.rewrites,
-        created_at: new Date().toISOString(),
-      });
-      if (dbError) {
-        console.error("Supabase保存エラー:", dbError);
-      }
-    }
-
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error("API error:", error);
-    return NextResponse.json({ error: "サーバーエラーが発生しました" }, { status: 500 });
-  }
-}
+診断（SYSTEM_PROMPT_DIAGNOSIS）は上記とは別の独立したsystemプロンプトとして、
+POST関数内の診断フェーズ（524〜529行目）で単独使用されます。
+リライトはmode==="rewrite"時は診断をスキップしてクライアントから受け取った
+診断結果（clientDiagnosis）を使い、mode無し（後方互換）時は直前に実行した
+診断結果（diagnosisResult）をそのままuserメッセージ内に埋め込んでリライトを実行します
+（"元の文章：\n{text}\n\n診断結果：\n{JSON.stringify(diagnosis)}"の形式、431〜456行目）。

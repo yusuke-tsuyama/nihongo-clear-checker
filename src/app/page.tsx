@@ -10,6 +10,7 @@ import RewritePanel from "@/components/RewritePanel";
 import HistoryPanel from "@/components/HistoryPanel";
 import TermsModal from "@/components/TermsModal";
 import Onboarding from "@/components/Onboarding";
+import AuthStatus from "@/components/AuthStatus";
 
 const MAX_CHARS = 3000;
 
@@ -182,6 +183,7 @@ export default function HomePage() {
               🕐 履歴
             </button>
             <span className="text-xs px-2 py-1 rounded-full hidden sm:block" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>Beta</span>
+            <AuthStatus />
           </div>
         </div>
       </header>
