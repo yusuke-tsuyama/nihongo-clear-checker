@@ -209,6 +209,13 @@ export default function HomePage() {
             >
               🕐 履歴
             </button>
+            <a
+              href="/examples"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              style={{ background: "var(--paper)", color: "var(--ink-soft)", border: "1px solid var(--border)" }}
+            >
+              📚 みんなの事例
+            </a>
             <span className="text-xs px-2 py-1 rounded-full hidden sm:block" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>Beta</span>
             <AuthStatus />
           </div>
@@ -335,7 +342,7 @@ export default function HomePage() {
                     {saved ? "✓ 保存しました" : "💾 履歴に保存する"}
                   </button>
                 </div>
-                <RewritePanel rewrites={result.rewrites} />
+                <RewritePanel rewrites={result.rewrites} originalText={text} />
               </div>
             )}
 
