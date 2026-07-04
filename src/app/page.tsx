@@ -11,13 +11,22 @@ import HistoryPanel from "@/components/HistoryPanel";
 import TermsModal from "@/components/TermsModal";
 import Onboarding from "@/components/Onboarding";
 import AuthStatus from "@/components/AuthStatus";
-
-const MAX_CHARS = 3000;
+import { DEFAULT_ENTITLEMENTS } from "@/lib/entitlements";
 
 const SAMPLE_TEXT = `私が昨日、友人から聞いた話によると、最近、都市部において、特に若い世代を中心に、読書離れが急速に進んでいるということです。これは非常に深刻な問題だと思います。本を読まないということは、語彙力が低下するということです。語彙力が低下すると、思考力も低下します。思考力が低下すると、様々な問題が発生します。このような問題を解決するためには、学校教育の場において、読書を推進する取り組みを積極的に行っていく必要があると考えられます。`;
 
 function LoadingCard() {
   return <div className="rounded-xl p-4 shimmer" style={{ height: 80 }} />;
+}
+
+function toUserMessage(data: { error?: string; maxCharacters?: number; inputChars?: number } | null | undefined): string {
+  if (data?.error === "INPUT_TOO_LONG") {
+    return `文章が上限文字数（${data.maxCharacters ?? "?"}文字）を超えています（現在${data.inputChars ?? "?"}文字）。文章を短くしてお試しください。`;
+  }
+  if (data?.error === "OUTPUT_TRUNCATED") {
+    return "文章が長いため結果が途中で切れました。文章を分割してお試しください。";
+  }
+  return data?.error || "エラーが発生しました。";
 }
 
 export default function HomePage() {
@@ -32,6 +41,24 @@ export default function HomePage() {
   const [historyRefresh, setHistoryRefresh] = useState(0);
   const [saved, setSaved] = useState(false);
   const [onboardingMode, setOnboardingMode] = useState<"onboarding" | "tutorial-only" | null>("onboarding");
+  const [maxChars, setMaxChars] = useState(DEFAULT_ENTITLEMENTS.maxCharacters);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/me/entitlements")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.maxCharacters) {
+          setMaxChars(data.maxCharacters);
+        }
+      })
+      .catch(() => {
+        // 取得失敗時はDEFAULT_ENTITLEMENTSのフォールバック値のまま維持する
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleOnboardingComplete = () => {
     setOnboardingMode(null);
@@ -64,7 +91,7 @@ export default function HomePage() {
       });
 
       const diagData = await diagRes.json();
-      if (!diagRes.ok) throw new Error(diagData.error || "エラーが発生しました。");
+      if (!diagRes.ok) throw new Error(toUserMessage(diagData));
 
       const diagnosisResult = diagData as AnalysisResult;
       setResult(diagnosisResult);
@@ -83,7 +110,7 @@ export default function HomePage() {
       });
 
       const rewriteData = await rewriteRes.json();
-      if (!rewriteRes.ok) throw new Error(rewriteData.error || "リライトの生成に失敗しました。");
+      if (!rewriteRes.ok) throw new Error(toUserMessage(rewriteData) || "リライトの生成に失敗しました。");
 
       const fullResult: AnalysisResult = { ...diagnosisResult, rewrites: rewriteData.rewrites };
       setResult(fullResult);
@@ -128,7 +155,7 @@ export default function HomePage() {
   };
 
   const charCount = text.length;
-  const overLimit = charCount > MAX_CHARS;
+  const overLimit = charCount > maxChars;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--paper)" }}>
@@ -221,7 +248,7 @@ export default function HomePage() {
             />
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono" style={{ color: overLimit ? "var(--error)" : "var(--ink-muted)" }}>
-                {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()} 文字
+                {charCount.toLocaleString()} / {maxChars.toLocaleString()} 文字
               </span>
               <div className="flex items-center gap-2">
               <button

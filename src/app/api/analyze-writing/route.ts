@@ -3,6 +3,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
 import { CLAUDE_MODEL } from "@/lib/constants";
+import { getUserEntitlements } from "@/lib/user-entitlements";
+
+// リライトの各パターンがmax_tokensで途中切れした場合に、そのパターンの本文の代わりに表示する文言
+const OUTPUT_TRUNCATED_MESSAGE =
+  "文章が長いため結果が途中で切れました。文章を分割してお試しください。";
 
 const client = new Anthropic();
 
@@ -449,6 +454,11 @@ async function rewriteOne(
     { maxRetries: 4 }
   );
 
+  if (response.stop_reason === "max_tokens") {
+    console.error(`リライト(${pattern})がmax_tokensで途中切れしました`);
+    return OUTPUT_TRUNCATED_MESSAGE;
+  }
+
   return response.content
     .filter((block): block is Anthropic.TextBlock => block.type === "text")
     .map((block) => block.text)
@@ -480,6 +490,16 @@ export async function POST(req: NextRequest) {
 
     if (!text || typeof text !== "string") {
       return NextResponse.json({ error: "テキストが必要です" }, { status: 400 });
+    }
+
+    // ===== 文字数上限チェック（AI呼び出し前・診断/リライト両モード共通） =====
+    const entitlements = await getUserEntitlements(serverSupabase);
+    const inputChars = text.length;
+    if (inputChars > entitlements.maxCharacters) {
+      return NextResponse.json(
+        { error: "INPUT_TOO_LONG", maxCharacters: entitlements.maxCharacters, inputChars },
+        { status: 400 }
+      );
     }
 
     // ===== mode === "rewrite": 診断をスキップし、受け取った診断結果でリライトのみ実行 =====
@@ -535,6 +555,11 @@ export async function POST(req: NextRequest) {
       system: SYSTEM_PROMPT_DIAGNOSIS,
       messages: [{ role: "user", content: text }],
     });
+
+    if (diagnosisResponse.stop_reason === "max_tokens") {
+      console.error("診断API応答がmax_tokensで途中切れしました");
+      return NextResponse.json({ error: "OUTPUT_TRUNCATED" }, { status: 422 });
+    }
 
     const diagnosisText = diagnosisResponse.content
       .filter((block): block is Anthropic.TextBlock => block.type === "text")
