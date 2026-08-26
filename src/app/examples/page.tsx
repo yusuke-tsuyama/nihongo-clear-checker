@@ -214,8 +214,10 @@ export default function ExamplesPage() {
                   style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 1px 4px var(--shadow)" }}
                 >
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <h2 className="font-display font-bold" style={{ color: "var(--ink)", fontSize: "1.05rem" }}>
-                      {ex.title}
+                    <h2 className="font-display font-bold" style={{ fontSize: "1.05rem" }}>
+                      <a href={`/examples/${ex.id}`} style={{ color: "var(--ink)" }}>
+                        {ex.title}
+                      </a>
                     </h2>
                     <span
                       className="text-xs px-2.5 py-1 rounded-full flex-shrink-0"
