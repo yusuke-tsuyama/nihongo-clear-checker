@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
 import { CLAUDE_MODEL } from "@/lib/constants";
 import { getUserEntitlements } from "@/lib/user-entitlements";
+export const maxDuration = 300;
 
 // リライトの各パターンがmax_tokensで途中切れした場合に、そのパターンの本文の代わりに表示する文言
 const OUTPUT_TRUNCATED_MESSAGE =
