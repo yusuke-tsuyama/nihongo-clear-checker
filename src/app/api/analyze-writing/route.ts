@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
 import { CLAUDE_MODEL } from "@/lib/constants";
 import { getUserEntitlements } from "@/lib/user-entitlements";
+import { logAiUsage } from "@/lib/ai-usage-logger";
 export const maxDuration = 300;
 
 // リライトの各パターンがmax_tokensで途中切れした場合に、そのパターンの本文の代わりに表示する文言
@@ -14,6 +15,9 @@ const client = new Anthropic();
 
 // haiku検証などでリライト用モデルだけ差し替えたい場合はここを変更する
 const REWRITE_MODEL = CLAUDE_MODEL;
+
+const DIAGNOSIS_MAX_TOKENS = 8000;
+const REWRITE_MAX_TOKENS = 5000;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -463,42 +467,105 @@ async function mapWithConcurrency<T, R>(
 async function rewriteOne(
   pattern: RewritePattern,
   text: string,
-  diagnosis: unknown
+  diagnosis: unknown,
+  requestId: string,
+  userId: string | null
 ): Promise<string> {
-  const response = await client.messages.create(
-    {
+  const startedAt = Date.now();
+  let response: Anthropic.Message;
+
+  try {
+    response = await client.messages.create(
+      {
+        model: REWRITE_MODEL,
+        max_tokens: REWRITE_MAX_TOKENS,
+        system: buildRewritePrompt(pattern),
+        messages: [
+          {
+            role: "user",
+            content: `元の文章：\n${text}\n\n診断結果：\n${JSON.stringify(diagnosis)}`,
+          },
+        ],
+      },
+      { maxRetries: 4 }
+    );
+  } catch (err) {
+    await logAiUsage({
+      user_id: userId,
+      request_id: requestId,
+      mode: "rewrite",
+      rewrite_pattern: pattern,
+      input_chars: text.length,
+      output_chars: 0,
+      input_tokens: null,
+      output_tokens: null,
       model: REWRITE_MODEL,
-      max_tokens: 5000,
-      system: buildRewritePrompt(pattern),
-      messages: [
-        {
-          role: "user",
-          content: `元の文章：\n${text}\n\n診断結果：\n${JSON.stringify(diagnosis)}`,
-        },
-      ],
-    },
-    { maxRetries: 4 }
-  );
+      max_tokens: REWRITE_MAX_TOKENS,
+      duration_ms: Date.now() - startedAt,
+      success: false,
+      error_message: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
+
+  const durationMs = Date.now() - startedAt;
+  const inputTokens = response.usage?.input_tokens ?? null;
+  const outputTokens = response.usage?.output_tokens ?? null;
 
   if (response.stop_reason === "max_tokens") {
     console.error(`リライト(${pattern})がmax_tokensで途中切れしました`);
+    await logAiUsage({
+      user_id: userId,
+      request_id: requestId,
+      mode: "rewrite",
+      rewrite_pattern: pattern,
+      input_chars: text.length,
+      output_chars: OUTPUT_TRUNCATED_MESSAGE.length,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      model: REWRITE_MODEL,
+      max_tokens: REWRITE_MAX_TOKENS,
+      duration_ms: durationMs,
+      success: false,
+      error_message: `リライト(${pattern})がmax_tokensで途中切れしました`,
+    });
     return OUTPUT_TRUNCATED_MESSAGE;
   }
 
-  return response.content
+  const outputText = response.content
     .filter((block): block is Anthropic.TextBlock => block.type === "text")
     .map((block) => block.text)
     .join("")
     .trim();
+
+  await logAiUsage({
+    user_id: userId,
+    request_id: requestId,
+    mode: "rewrite",
+    rewrite_pattern: pattern,
+    input_chars: text.length,
+    output_chars: outputText.length,
+    input_tokens: inputTokens,
+    output_tokens: outputTokens,
+    model: REWRITE_MODEL,
+    max_tokens: REWRITE_MAX_TOKENS,
+    duration_ms: durationMs,
+    success: true,
+    error_message: null,
+  });
+
+  return outputText;
 }
 
 async function generateRewrites(
   text: string,
-  diagnosis: unknown
+  diagnosis: unknown,
+  requestId: string,
+  userId: string | null
 ): Promise<{ simple: string; web: string; business: string }> {
   const patterns: RewritePattern[] = ["simple", "web", "business"];
   const [simple, web, business] = await mapWithConcurrency(patterns, 3, (pattern) =>
-    rewriteOne(pattern, text, diagnosis)
+    rewriteOne(pattern, text, diagnosis, requestId, userId)
   );
   return { simple, web, business };
 }
@@ -510,7 +577,9 @@ export async function POST(req: NextRequest) {
     const {
       data: { user },
     } = await serverSupabase.auth.getUser();
-    void user;
+
+    const requestId = crypto.randomUUID();
+    const userId = user?.id ?? null;
 
     const { text, sessionId, mode, diagnosisResult: clientDiagnosis } = await req.json();
 
@@ -534,7 +603,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "リライトには診断結果が必要です" }, { status: 400 });
       }
       try {
-        const rewriteResult = await generateRewrites(text, clientDiagnosis);
+        const rewriteResult = await generateRewrites(text, clientDiagnosis, requestId, userId);
         return NextResponse.json({ rewrites: rewriteResult });
       } catch (rewriteError) {
         console.error("リライト失敗:", rewriteError);
@@ -575,22 +644,79 @@ export async function POST(req: NextRequest) {
     }
 
     // ===== 診断 =====
-    const diagnosisResponse = await client.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 8000,
-      system: SYSTEM_PROMPT_DIAGNOSIS,
-      messages: [{ role: "user", content: text }],
-    });
+    const diagnosisStartedAt = Date.now();
+    let diagnosisResponse: Anthropic.Message;
 
-    if (diagnosisResponse.stop_reason === "max_tokens") {
-      console.error("診断API応答がmax_tokensで途中切れしました");
-      return NextResponse.json({ error: "OUTPUT_TRUNCATED" }, { status: 422 });
+    try {
+      diagnosisResponse = await client.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: DIAGNOSIS_MAX_TOKENS,
+        system: SYSTEM_PROMPT_DIAGNOSIS,
+        messages: [{ role: "user", content: text }],
+      });
+    } catch (err) {
+      await logAiUsage({
+        user_id: userId,
+        request_id: requestId,
+        mode: "diagnosis",
+        rewrite_pattern: null,
+        input_chars: inputChars,
+        output_chars: 0,
+        input_tokens: null,
+        output_tokens: null,
+        model: CLAUDE_MODEL,
+        max_tokens: DIAGNOSIS_MAX_TOKENS,
+        duration_ms: Date.now() - diagnosisStartedAt,
+        success: false,
+        error_message: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
     }
+
+    const diagnosisDurationMs = Date.now() - diagnosisStartedAt;
+    const diagnosisInputTokens = diagnosisResponse.usage?.input_tokens ?? null;
+    const diagnosisOutputTokens = diagnosisResponse.usage?.output_tokens ?? null;
 
     const diagnosisText = diagnosisResponse.content
       .filter((block): block is Anthropic.TextBlock => block.type === "text")
       .map((block) => block.text)
       .join("");
+
+    if (diagnosisResponse.stop_reason === "max_tokens") {
+      console.error("診断API応答がmax_tokensで途中切れしました");
+      await logAiUsage({
+        user_id: userId,
+        request_id: requestId,
+        mode: "diagnosis",
+        rewrite_pattern: null,
+        input_chars: inputChars,
+        output_chars: diagnosisText.length,
+        input_tokens: diagnosisInputTokens,
+        output_tokens: diagnosisOutputTokens,
+        model: CLAUDE_MODEL,
+        max_tokens: DIAGNOSIS_MAX_TOKENS,
+        duration_ms: diagnosisDurationMs,
+        success: false,
+        error_message: "診断API応答がmax_tokensで途中切れしました",
+      });
+      return NextResponse.json({ error: "OUTPUT_TRUNCATED" }, { status: 422 });
+    }
+
+    await logAiUsage({
+      user_id: userId,
+      request_id: requestId,
+      mode: "diagnosis",
+      rewrite_pattern: null,
+      input_chars: inputChars,
+      output_chars: diagnosisText.length,
+      input_tokens: diagnosisInputTokens,
+      output_tokens: diagnosisOutputTokens,
+      model: CLAUDE_MODEL,
+      max_tokens: DIAGNOSIS_MAX_TOKENS,
+      duration_ms: diagnosisDurationMs,
+      success: true,
+      error_message: null,
+    });
 
     let diagnosisResult: {
       score: number;
@@ -645,7 +771,7 @@ export async function POST(req: NextRequest) {
     let rewriteResult: { simple: string; web: string; business: string };
 
     try {
-      rewriteResult = await generateRewrites(text, diagnosisResult);
+      rewriteResult = await generateRewrites(text, diagnosisResult, requestId, userId);
     } catch (rewriteError) {
       console.error("リライト失敗:", rewriteError);
       return NextResponse.json({ error: "リライト結果の解析に失敗しました" }, { status: 500 });
