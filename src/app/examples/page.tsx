@@ -49,7 +49,7 @@ function ExpandableText({
 }) {
   const isTruncatable = text.length > 100;
   return (
-    <p className="text-sm leading-relaxed" style={{ color: "var(--ink-soft)" }}>
+    <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--ink-soft)" }}>
       {expanded ? text : truncate(text)}
       {isTruncatable && (
         <button
