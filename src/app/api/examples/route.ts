@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "途中で切れた結果は投稿できません" }, { status: 400 });
   }
 
-  const { data: exampleId, error } = await supabase.rpc("create_public_example", {
+  const { data, error } = await supabase.rpc("create_public_example", {
     p_title: title,
     p_original: original,
     p_rewritten: rewritten,
@@ -131,7 +131,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "投稿に失敗しました" }, { status: 500 });
   }
 
-  return NextResponse.json({ example_id: exampleId });
+  const result = data as { example_id: string; points_awarded: boolean };
+
+  return NextResponse.json({
+    example_id: result.example_id,
+    points_awarded: result.points_awarded,
+  });
 }
 
 export async function DELETE(req: NextRequest) {

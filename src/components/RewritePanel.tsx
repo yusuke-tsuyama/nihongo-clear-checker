@@ -64,7 +64,11 @@ export default function RewritePanel({ rewrites, originalText }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "投稿に失敗しました");
       setShowModal(false);
-      setToast("公開しました（+10pt獲得）");
+      setToast(
+        data?.points_awarded
+          ? "公開しました（+10pt獲得）"
+          : "公開しました（本日のポイント上限に達しています）"
+      );
       setTimeout(() => setToast(null), 3000);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "投稿に失敗しました");
