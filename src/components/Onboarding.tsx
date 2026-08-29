@@ -30,6 +30,12 @@ const TUTORIAL_STEPS = [
     desc: "「読みやすい版」「Web記事向け」「ビジネス文書版」の3種類のリライト案から選んで活用できます。コピーボタンですぐ使えます。",
     hint: "ヘッダーの「使い方」ボタンでいつでもこの画面を再表示できます。",
   },
+  {
+    icon: "🎁",
+    title: "貢献するほど便利に",
+    desc: "ログインしてリライト結果を「公開事例」として投稿したり、他の方の事例に「参考になった」を押したりすると、クリアポイントが貯まります。ポイントが貯まると、入力できる文字数が3000字から5000字に増えます。",
+    hint: "公開する文章に個人情報が含まれないよう、投稿前にご確認ください。公開した事例はいつでも削除できます。",
+  },
 ];
 
 interface Props {
@@ -145,7 +151,7 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
           <div style={{ padding: "1.5rem", maxHeight: "55vh", overflowY: "auto" }}>
             {showTermsFull ? (
               <div style={{ fontSize: "0.8rem", color: "var(--ink-soft)", lineHeight: 1.9 }} className="space-y-4">
-                <p style={{ color: "var(--ink-muted)", fontSize: "0.72rem" }}>最終更新日：2026年6月17日</p>
+                <p style={{ color: "var(--ink-muted)", fontSize: "0.72rem" }}>最終更新日：2026年8月28日</p>
                 <section>
                   <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第1条（目的）</strong>
                   本サービス「日本語クリアチェッカー」は、合同会社リベルダードが提供する日本語文章の診断・改善支援ツールです。
@@ -158,19 +164,31 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
                   ・違法または有害なコンテンツ
                 </section>
                 <section>
-                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第3条（データの取り扱い）</strong>
-                  入力文章はAI診断のためClaude APIへ送信されます。「保存」ボタンを押した場合のみデータが保存されます。診断のみの場合は保存されません。
+                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第3条（アカウントとログイン）</strong>
+                  クリアポイント、文字数上限の拡張、リライト事例の公開等の機能をご利用いただくには、メールアドレスによるログインが必要です。登録メールアドレスの管理はユーザーご自身の責任で行ってください。
                 </section>
                 <section>
-                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第4条（AIの性質）</strong>
+                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第4条（データの取り扱い）</strong>
+                  入力文章はAI診断のためClaude APIへ送信されます。診断・リライトのみを行った場合は保存されません。「履歴に保存する」を選択した場合は入力文章・診断結果・リライト案を保存し、「公開リライト事例」として投稿した場合はその内容を保存・公開します。保存したデータはユーザーご自身の操作でいつでも削除できます。
+                </section>
+                <section>
+                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第5条（クリアポイントとランク）</strong>
+                  クリアポイントは、貢献度に応じて付与されるサービス内でのみ意味を持つ実績指標です。金銭的価値はなく、換金・譲渡はできません。
+                </section>
+                <section>
+                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第6条（公開リライト事例）</strong>
+                  診断・リライトの結果は、ご自身の選択により「公開リライト事例」として投稿・公開できます。公開する際は個人情報・機密情報を含めないでください。公開した事例はいつでも削除できます。
+                </section>
+                <section>
+                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第7条（AIの性質）</strong>
                   診断はAI（Claude）によって行われます。結果は参考情報であり、正確性・完全性を保証するものではありません。医療・法律・金融などの専門的判断には使用しないでください。
                 </section>
                 <section>
-                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第5条（免責事項）</strong>
+                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第8条（免責事項）</strong>
                   本サービスの利用によって生じた損害について、当社は責任を負いかねます。必要に応じて専門家にご相談ください。
                 </section>
                 <section>
-                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第6条（お問い合わせ）</strong>
+                  <strong style={{ color: "var(--ink)", display: "block", marginBottom: 4 }}>第9条（お問い合わせ）</strong>
                   合同会社リベルダード　メール：info@liberdade.sakura.ne.jp
                 </section>
                 <button onClick={() => setShowTermsFull(false)} style={{ color: "var(--accent)", fontSize: "0.8rem", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }}>
@@ -185,8 +203,9 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
                 <ul style={{ fontSize: "0.82rem", color: "var(--ink-soft)", lineHeight: 1.9 }} className="space-y-2">
                   {[
                     "個人情報・機密情報を含む文章は入力しないでください。",
-                    "入力文章はAI診断のためClaude APIへ送信されます。",
-                    "「保存」ボタンを押した場合のみデータが保存されます。",
+                    "入力文章はAI診断のためClaude APIへ送信されます。「履歴に保存する」を選択しない限り、当社データベースには保存されません。",
+                    "クリアポイントや文字数上限の拡張などの機能を使うには、ログインが必要です。",
+                    "診断・リライト結果は、選択すれば「公開リライト事例」として投稿・公開できます（公開時は個人情報を含めないでください）。",
                     "診断結果はAIによるものであり、参考情報としてご活用ください。",
                     "医療・法律・金融などの専門的判断には使用しないでください。",
                   ].map((item, i) => (
