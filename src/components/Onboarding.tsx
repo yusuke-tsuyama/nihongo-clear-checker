@@ -109,6 +109,9 @@ export default function Onboarding({ onComplete, mode = "onboarding" }: Props) {
           </div>
           <div style={{ marginTop: "2rem", padding: "0.75rem 1.25rem", background: "rgba(255,255,255,0.08)", borderRadius: "0.75rem", maxWidth: 320, opacity: visible ? 1 : 0, transition: "opacity 0.6s ease 0.7s" }}>
             <div style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", marginBottom: "0.4rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>更新履歴</div>
+            <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.7)", lineHeight: 1.7, textAlign: "left", marginBottom: "0.6rem" }}>
+              <strong style={{ color: "rgba(255,255,255,0.9)" }}>2026年8月28日</strong>：ログイン機能と、貢献するほど便利になる「クリアポイント」を追加しました。ポイントを貯めると入力できる文字数が5000字まで増え、リライト事例の公開や共有もできます。
+            </p>
             <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.7)", lineHeight: 1.7, textAlign: "left" }}>
               <strong style={{ color: "rgba(255,255,255,0.9)" }}>2026年6月28日</strong>：診断・リライトの精度を改善し、結果を段階的に表示するようにしました。入力の一括削除ボタンも追加しました。
             </p>
