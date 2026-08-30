@@ -1,15 +1,28 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { DEFAULT_ENTITLEMENTS, getEntitlements, type Entitlements } from "./entitlements";
+import { DEFAULT_ENTITLEMENTS, getEntitlements, getRank, type Entitlements } from "./entitlements";
+
+export interface UserEntitlements extends Entitlements {
+  rank: string;
+  totalPoints: number;
+  isLoggedIn: boolean;
+}
+
+const GUEST_ENTITLEMENTS: UserEntitlements = {
+  ...DEFAULT_ENTITLEMENTS,
+  rank: "Guest",
+  totalPoints: 0,
+  isLoggedIn: false,
+};
 
 /**
  * サーバー専用。ログイン状態と profiles.total_points から entitlements を解決する。
  *
- * 未ログイン・profiles行なし・エラー時はすべて DEFAULT_ENTITLEMENTS に
+ * 未ログイン・profiles行なし・エラー時はすべて GUEST_ENTITLEMENTS に
  * フォールバックする（診断機能を止めないため、ここでは throw しない）。
  */
 export async function getUserEntitlements(
   supabaseServerClient: SupabaseClient
-): Promise<Entitlements> {
+): Promise<UserEntitlements> {
   try {
     const {
       data: { user },
@@ -17,7 +30,7 @@ export async function getUserEntitlements(
     } = await supabaseServerClient.auth.getUser();
 
     if (userError || !user) {
-      return DEFAULT_ENTITLEMENTS;
+      return GUEST_ENTITLEMENTS;
     }
 
     const { data: profile, error: profileError } = await supabaseServerClient
@@ -27,11 +40,18 @@ export async function getUserEntitlements(
       .maybeSingle();
 
     if (profileError || !profile) {
-      return DEFAULT_ENTITLEMENTS;
+      return GUEST_ENTITLEMENTS;
     }
 
-    return getEntitlements(profile.total_points as number | null | undefined);
+    const totalPoints = (profile.total_points as number | null | undefined) ?? 0;
+
+    return {
+      ...getEntitlements(totalPoints),
+      rank: getRank(totalPoints).name,
+      totalPoints,
+      isLoggedIn: true,
+    };
   } catch {
-    return DEFAULT_ENTITLEMENTS;
+    return GUEST_ENTITLEMENTS;
   }
 }
