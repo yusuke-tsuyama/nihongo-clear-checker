@@ -17,14 +17,14 @@ interface RankInfo {
 function RankBadge({ info }: { info: RankInfo }) {
   if (!info.isLoggedIn) {
     return (
-      <span className="text-xs hidden sm:block" style={{ color: "var(--ink-muted)" }}>
+      <span className="text-xs" style={{ color: "var(--ink-muted)" }}>
         👤 ゲスト
       </span>
     );
   }
   const icon = RANK_ICONS[info.rank] ?? "👤";
   return (
-    <span className="text-xs hidden sm:block" style={{ color: "var(--ink-muted)" }}>
+    <span className="text-xs" style={{ color: "var(--ink-muted)" }}>
       {icon} {info.rank}・{info.totalPoints}pt
     </span>
   );
@@ -74,7 +74,7 @@ export default function AuthStatus() {
 
   if (!email) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         {rankInfo && <RankBadge info={rankInfo} />}
         <a
           href="/login"
@@ -88,7 +88,7 @@ export default function AuthStatus() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
       <span className="text-xs hidden sm:block" style={{ color: "var(--ink-muted)" }}>
         {email}
       </span>

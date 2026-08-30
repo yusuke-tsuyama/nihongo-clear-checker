@@ -187,14 +187,14 @@ export default function HomePage() {
       )}
 
       <header style={{ borderBottom: "1px solid var(--border)", background: "white", position: "sticky", top: 0, zIndex: 40 }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 flex items-center justify-between" style={{ height: 60 }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between flex-wrap gap-2 sm:flex-nowrap" style={{ minHeight: 60 }}>
           <div className="flex items-center gap-2.5">
             <AppIcon size={28} />
             <span className="font-display font-bold" style={{ color: "var(--ink)", fontSize: "1rem", letterSpacing: "0.02em" }}>
               日本語クリアチェッカー
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
               onClick={() => setOnboardingMode("tutorial-only")}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
@@ -216,7 +216,6 @@ export default function HomePage() {
             >
               📚 みんなの事例
             </a>
-            <span className="text-xs px-2 py-1 rounded-full hidden sm:block" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>Beta</span>
             <AuthStatus />
           </div>
         </div>
