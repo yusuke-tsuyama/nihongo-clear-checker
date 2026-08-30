@@ -16,12 +16,6 @@ interface ExampleItem {
   isOwn: boolean;
 }
 
-const PATTERN_LABELS: Record<ExampleItem["rewrite_pattern"], string> = {
-  simple: "簡潔",
-  web: "Web",
-  business: "ビジネス文書",
-};
-
 function truncate(text: string, length = 100) {
   return text.length > length ? `${text.slice(0, length)}…` : text;
 }
@@ -219,12 +213,6 @@ export default function ExamplesPage() {
                         {ex.title}
                       </a>
                     </h2>
-                    <span
-                      className="text-xs px-2.5 py-1 rounded-full flex-shrink-0"
-                      style={{ background: "var(--accent-light)", color: "var(--accent)" }}
-                    >
-                      {PATTERN_LABELS[ex.rewrite_pattern]}
-                    </span>
                   </div>
 
                   <div className="space-y-3 mb-4">

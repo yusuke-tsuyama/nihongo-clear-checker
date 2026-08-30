@@ -7,12 +7,6 @@ import ExampleDetailClient from "./ExampleDetailClient";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const PATTERN_LABELS: Record<"simple" | "web" | "business", string> = {
-  simple: "簡潔",
-  web: "Web",
-  business: "ビジネス文書",
-};
-
 interface ExampleDetail {
   id: string;
   title: string;
@@ -180,12 +174,6 @@ export default async function ExampleDetailPage({ params }: { params: { id: stri
               <h1 className="font-display font-bold" style={{ color: "var(--ink)", fontSize: "1.3rem" }}>
                 {example.title}
               </h1>
-              <span
-                className="text-xs px-2.5 py-1 rounded-full flex-shrink-0"
-                style={{ background: "var(--accent-light)", color: "var(--accent)" }}
-              >
-                {PATTERN_LABELS[example.rewrite_pattern]}
-              </span>
             </div>
 
             <div className="space-y-5 mb-6">
