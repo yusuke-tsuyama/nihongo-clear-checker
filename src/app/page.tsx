@@ -15,6 +15,8 @@ import { DEFAULT_ENTITLEMENTS } from "@/lib/entitlements";
 
 const SAMPLE_TEXT = `私が昨日、友人から聞いた話によると、最近、都市部において、特に若い世代を中心に、読書離れが急速に進んでいるということです。これは非常に深刻な問題だと思います。本を読まないということは、語彙力が低下するということです。語彙力が低下すると、思考力も低下します。思考力が低下すると、様々な問題が発生します。このような問題を解決するためには、学校教育の場において、読書を推進する取り組みを積極的に行っていく必要があると考えられます。`;
 
+const DRAFT_TEXT_STORAGE_KEY = "nihongo_checker_draft_text";
+
 function LoadingCard() {
   return <div className="rounded-xl p-4 shimmer" style={{ height: 80 }} />;
 }
@@ -42,6 +44,19 @@ export default function HomePage() {
   const [saved, setSaved] = useState(false);
   const [onboardingMode, setOnboardingMode] = useState<"onboarding" | "tutorial-only" | null>("onboarding");
   const [maxChars, setMaxChars] = useState(DEFAULT_ENTITLEMENTS.maxCharacters);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedText = window.sessionStorage.getItem(DRAFT_TEXT_STORAGE_KEY);
+    if (savedText) {
+      setText(savedText);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(DRAFT_TEXT_STORAGE_KEY, text);
+  }, [text]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +87,9 @@ export default function HomePage() {
       setError(null);
       setSaved(false);
       setPhase("idle");
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem(DRAFT_TEXT_STORAGE_KEY);
+      }
     }
   };
 
