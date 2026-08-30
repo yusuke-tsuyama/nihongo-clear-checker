@@ -66,6 +66,7 @@ export default function ExamplesPage() {
   const [votingId, setVotingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<string | null>(null);
 
   const toggleExpanded = (key: string) => {
     setExpandedKeys((prev) => {
@@ -120,6 +121,8 @@ export default function ExamplesPage() {
       setExamples(
         (prev) => prev?.map((ex) => (ex.id === id ? { ...ex, voteCount: ex.voteCount + 1 } : ex)) ?? prev
       );
+      setToast("投稿者に+3ptを贈りました");
+      setTimeout(() => setToast(null), 3000);
     } catch (err) {
       alert(err instanceof Error ? err.message : "投票に失敗しました");
     } finally {
@@ -269,6 +272,15 @@ export default function ExamplesPage() {
           </div>
         )}
       </main>
+
+      {toast && (
+        <div
+          className="fixed bottom-4 right-4 z-50 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg"
+          style={{ background: "var(--ok)" }}
+        >
+          ✓ {toast}
+        </div>
+      )}
     </div>
   );
 }
