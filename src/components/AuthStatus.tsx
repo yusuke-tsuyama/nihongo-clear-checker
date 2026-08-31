@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import DisplayNameModal from "./DisplayNameModal";
 
 const RANK_ICONS: Record<string, string> = {
   Beginner: "🌱",
@@ -34,6 +35,8 @@ export default function AuthStatus() {
   const [email, setEmail] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [rankInfo, setRankInfo] = useState<RankInfo | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [showNameModal, setShowNameModal] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -59,6 +62,7 @@ export default function AuthStatus() {
           totalPoints: data?.totalPoints ?? 0,
           isLoggedIn: !!data?.isLoggedIn,
         });
+        setDisplayName(data?.displayName ?? null);
       })
       .catch(() => setRankInfo({ rank: "Guest", totalPoints: 0, isLoggedIn: false }));
   }, []);
@@ -89,9 +93,23 @@ export default function AuthStatus() {
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-xs hidden sm:block" style={{ color: "var(--ink-muted)" }}>
-        {email}
-      </span>
+      {displayName ? (
+        <button
+          onClick={() => setShowNameModal(true)}
+          className="text-xs max-w-[7rem] truncate underline-offset-2 hover:underline"
+          style={{ color: "var(--ink-muted)" }}
+        >
+          {displayName}
+        </button>
+      ) : (
+        <button
+          onClick={() => setShowNameModal(true)}
+          className="text-xs underline-offset-2 hover:underline"
+          style={{ color: "var(--accent)" }}
+        >
+          ユーザー名を設定
+        </button>
+      )}
       {rankInfo && <RankBadge info={rankInfo} />}
       <button
         onClick={handleLogout}
@@ -100,6 +118,13 @@ export default function AuthStatus() {
       >
         ログアウト
       </button>
+      {showNameModal && (
+        <DisplayNameModal
+          displayName={displayName}
+          onClose={() => setShowNameModal(false)}
+          onSaved={(newName) => setDisplayName(newName)}
+        />
+      )}
     </div>
   );
 }
