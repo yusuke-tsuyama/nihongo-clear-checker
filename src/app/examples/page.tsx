@@ -14,6 +14,7 @@ interface ExampleItem {
   created_at: string;
   voteCount: number;
   isOwn: boolean;
+  authorName: string;
 }
 
 function truncate(text: string, length = 100) {
@@ -210,25 +211,32 @@ export default function ExamplesPage() {
                   className="rounded-2xl p-5"
                   style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 1px 4px var(--shadow)" }}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center justify-between gap-2 mb-1">
                     <h2 className="font-display font-bold" style={{ fontSize: "1.05rem" }}>
-                      <a href={`/examples/${ex.id}`} style={{ color: "var(--ink)" }}>
+                      <a
+                        href={`/examples/${ex.id}`}
+                        className="inline-block px-2 py-1 -mx-2 -my-1 rounded-lg transition-colors hover:bg-[var(--accent-light)]"
+                        style={{ color: "var(--ink)" }}
+                      >
                         {ex.title}
                       </a>
                     </h2>
                   </div>
+                  <div className="text-xs mb-3" style={{ color: "var(--ink-muted)" }}>
+                    by {ex.authorName}
+                  </div>
 
-                  <div className="space-y-3 mb-4">
+                  <div className="mb-4">
                     <div>
-                      <div className="text-xs font-medium mb-1" style={{ color: "var(--ink-muted)" }}>元の文章</div>
+                      <div className="text-lg font-semibold mb-1.5" style={{ color: "var(--accent)" }}>元の文章</div>
                       <ExpandableText
                         text={ex.original_text}
                         expanded={expandedKeys.has(`${ex.id}-original`)}
                         onToggle={() => toggleExpanded(`${ex.id}-original`)}
                       />
                     </div>
-                    <div>
-                      <div className="text-xs font-medium mb-1" style={{ color: "var(--ink-muted)" }}>リライト後</div>
+                    <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
+                      <div className="text-lg font-semibold mb-1.5" style={{ color: "var(--accent)" }}>リライト後</div>
                       <ExpandableText
                         text={ex.rewritten_text}
                         expanded={expandedKeys.has(`${ex.id}-rewritten`)}

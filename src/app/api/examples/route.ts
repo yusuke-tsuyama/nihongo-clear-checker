@@ -57,6 +57,26 @@ export async function GET() {
     }
   }
 
+  let displayNameByUserId = new Map<string, string | null>();
+  const userIds = Array.from(new Set((rows ?? []).map((row) => row.user_id)));
+  if (userIds.length > 0) {
+    const { data: displayNames, error: displayNameError } = await supabase.rpc(
+      "get_public_display_names",
+      { p_user_ids: userIds }
+    );
+    if (displayNameError) {
+      // ユーザー名の取得に失敗しても一覧自体は返す（authorNameは「匿名ユーザー」として扱う）
+      console.error("ユーザー名取得失敗:", displayNameError);
+    } else {
+      displayNameByUserId = new Map(
+        (displayNames ?? []).map((d: { user_id: string; display_name: string | null }) => [
+          d.user_id,
+          d.display_name,
+        ])
+      );
+    }
+  }
+
   const examples = (rows ?? []).map((row) => ({
     id: row.id,
     title: row.title,
@@ -66,6 +86,7 @@ export async function GET() {
     created_at: row.created_at,
     voteCount: voteCountById.get(row.id) ?? 0,
     isOwn: user?.id === row.user_id,
+    authorName: displayNameByUserId.get(row.user_id) ?? "匿名ユーザー",
   }));
 
   let myVotedExampleIds: string[] = [];

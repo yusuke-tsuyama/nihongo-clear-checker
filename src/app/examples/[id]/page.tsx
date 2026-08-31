@@ -18,6 +18,7 @@ interface ExampleDetail {
   isOwn: boolean;
   voted: boolean;
   isLoggedIn: boolean;
+  authorName: string;
 }
 
 // generateMetadataとページ本体の両方から呼ばれるため、
@@ -56,6 +57,16 @@ const getExample = cache(async (id: string): Promise<ExampleDetail | null> => {
   }
   const voteCount = voteCounts?.[0]?.vote_count ?? 0;
 
+  const { data: displayNames, error: displayNameError } = await supabase.rpc(
+    "get_public_display_names",
+    { p_user_ids: [row.user_id] }
+  );
+  if (displayNameError) {
+    // ユーザー名の取得に失敗しても本体は返す（authorNameは「匿名ユーザー」として扱う）
+    console.error("ユーザー名取得失敗:", displayNameError);
+  }
+  const authorName = displayNames?.[0]?.display_name ?? "匿名ユーザー";
+
   let voted = false;
   if (user) {
     const { data: myVote, error: myVoteError } = await supabase
@@ -82,6 +93,7 @@ const getExample = cache(async (id: string): Promise<ExampleDetail | null> => {
     isOwn: user?.id === row.user_id,
     voted,
     isLoggedIn: !!user,
+    authorName,
   };
 });
 
@@ -170,21 +182,24 @@ export default async function ExampleDetailPage({ params }: { params: { id: stri
             className="rounded-2xl p-6"
             style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 1px 4px var(--shadow)" }}
           >
-            <div className="flex items-center justify-between gap-2 mb-5">
+            <div className="flex items-center justify-between gap-2 mb-1">
               <h1 className="font-display font-bold" style={{ color: "var(--ink)", fontSize: "1.3rem" }}>
                 {example.title}
               </h1>
             </div>
+            <div className="text-xs mb-5" style={{ color: "var(--ink-muted)" }}>
+              by {example.authorName}
+            </div>
 
-            <div className="space-y-5 mb-6">
+            <div className="mb-6">
               <div>
-                <div className="text-xs font-medium mb-1.5" style={{ color: "var(--ink-muted)" }}>元の文章</div>
+                <div className="text-lg font-semibold mb-1.5" style={{ color: "var(--accent)" }}>元の文章</div>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--ink-soft)" }}>
                   {example.original_text}
                 </p>
               </div>
-              <div>
-                <div className="text-xs font-medium mb-1.5" style={{ color: "var(--ink-muted)" }}>リライト後</div>
+              <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
+                <div className="text-lg font-semibold mb-1.5" style={{ color: "var(--accent)" }}>リライト後</div>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--ink-soft)" }}>
                   {example.rewritten_text}
                 </p>
