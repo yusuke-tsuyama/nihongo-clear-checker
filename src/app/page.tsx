@@ -271,7 +271,7 @@ export default function HomePage() {
               rows={10}
             />
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono" style={{ color: overLimit ? "var(--error)" : "var(--ink-muted)" }}>
+              <span className="text-xs" style={{ color: overLimit ? "var(--error)" : "var(--ink-muted)" }}>
                 {charCount.toLocaleString()} / {maxChars.toLocaleString()} 文字
               </span>
               <div className="flex items-center gap-2">

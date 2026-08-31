@@ -77,7 +77,7 @@ export default function HistoryPanel({ onLoad, refreshTrigger, inModal = false }
                   <p className="text-xs truncate" style={{ color: "var(--ink)" }}>{rec.input_text.slice(0, 40)}…</p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--ink-muted)" }}>{rec.summary.slice(0, 30)}…</p>
                 </div>
-                <span className="text-xs flex-shrink-0 font-mono" style={{ color: "var(--ink-muted)" }}>
+                <span className="text-xs flex-shrink-0" style={{ color: "var(--ink-muted)" }}>
                   {rec.created_at ? formatDate(rec.created_at) : ""}
                 </span>
               </button>
@@ -133,7 +133,7 @@ export default function HistoryPanel({ onLoad, refreshTrigger, inModal = false }
                     <p className="text-xs truncate" style={{ color: "var(--ink)" }}>{rec.input_text.slice(0, 40)}…</p>
                     <p className="text-xs mt-0.5" style={{ color: "var(--ink-muted)" }}>{rec.summary.slice(0, 30)}…</p>
                   </div>
-                  <span className="text-xs flex-shrink-0 font-mono" style={{ color: "var(--ink-muted)" }}>
+                  <span className="text-xs flex-shrink-0" style={{ color: "var(--ink-muted)" }}>
                     {rec.created_at ? formatDate(rec.created_at) : ""}
                   </span>
                 </button>
