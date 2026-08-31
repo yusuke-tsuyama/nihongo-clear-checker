@@ -193,13 +193,13 @@ export default async function ExampleDetailPage({ params }: { params: { id: stri
 
             <div className="mb-6">
               <div>
-                <div className="text-lg font-semibold mb-1.5" style={{ color: "var(--accent)" }}>元の文章</div>
+                <div className="font-display font-bold text-lg mb-1.5" style={{ color: "var(--accent)" }}>元の文章</div>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--ink-soft)" }}>
                   {example.original_text}
                 </p>
               </div>
               <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
-                <div className="text-lg font-semibold mb-1.5" style={{ color: "var(--accent)" }}>リライト後</div>
+                <div className="font-display font-bold text-lg mb-1.5" style={{ color: "var(--accent)" }}>リライト後</div>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--ink-soft)" }}>
                   {example.rewritten_text}
                 </p>

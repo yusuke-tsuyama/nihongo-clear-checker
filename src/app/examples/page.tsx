@@ -228,7 +228,7 @@ export default function ExamplesPage() {
 
                   <div className="mb-4">
                     <div>
-                      <div className="text-lg font-semibold mb-1.5" style={{ color: "var(--accent)" }}>元の文章</div>
+                      <div className="font-display font-bold text-lg mb-1.5" style={{ color: "var(--accent)" }}>元の文章</div>
                       <ExpandableText
                         text={ex.original_text}
                         expanded={expandedKeys.has(`${ex.id}-original`)}
@@ -236,7 +236,7 @@ export default function ExamplesPage() {
                       />
                     </div>
                     <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
-                      <div className="text-lg font-semibold mb-1.5" style={{ color: "var(--accent)" }}>リライト後</div>
+                      <div className="font-display font-bold text-lg mb-1.5" style={{ color: "var(--accent)" }}>リライト後</div>
                       <ExpandableText
                         text={ex.rewritten_text}
                         expanded={expandedKeys.has(`${ex.id}-rewritten`)}
