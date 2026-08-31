@@ -5,6 +5,7 @@ export interface UserEntitlements extends Entitlements {
   rank: string;
   totalPoints: number;
   isLoggedIn: boolean;
+  displayName: string | null;
 }
 
 const GUEST_ENTITLEMENTS: UserEntitlements = {
@@ -12,6 +13,7 @@ const GUEST_ENTITLEMENTS: UserEntitlements = {
   rank: "Guest",
   totalPoints: 0,
   isLoggedIn: false,
+  displayName: null,
 };
 
 /**
@@ -35,7 +37,7 @@ export async function getUserEntitlements(
 
     const { data: profile, error: profileError } = await supabaseServerClient
       .from("profiles")
-      .select("total_points")
+      .select("total_points, display_name")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -44,12 +46,14 @@ export async function getUserEntitlements(
     }
 
     const totalPoints = (profile.total_points as number | null | undefined) ?? 0;
+    const displayName = (profile.display_name as string | null | undefined) ?? null;
 
     return {
       ...getEntitlements(totalPoints),
       rank: getRank(totalPoints).name,
       totalPoints,
       isLoggedIn: true,
+      displayName,
     };
   } catch {
     return GUEST_ENTITLEMENTS;
