@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import AppIcon from "@/components/AppIcon";
 
@@ -8,6 +8,28 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+
+  // マジックリンクのコールバック失敗時、/auth/callback から
+  // ?error=... または #error=...&error_code=... が付与されて戻ってくる
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+
+    const error = query.get("error") ?? hash.get("error");
+    const errorCode = query.get("error_code") ?? hash.get("error_code");
+
+    if (!error && !errorCode) return;
+
+    if (errorCode === "otp_expired") {
+      setErrorMessage("リンクが無効です。最新のメールのリンクをお試しください。");
+    } else {
+      setErrorMessage("ログインに失敗しました。もう一度お試しください。");
+    }
+    setStatus("error");
+
+    // リロード時に古いエラーが再表示されないようURLを掃除する
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
